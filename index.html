@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Permanent+Marker&family=Bungee+Inline&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<style>
+  @keyframes csflicker { 0%,100%{opacity:1} 92%{opacity:1} 94%{opacity:.78} 96%{opacity:1} 97%{opacity:.85} 98%{opacity:1} }
+  @keyframes csfloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  @keyframes csspin { to{transform:rotate(360deg)} }
+  @keyframes csglow { 0%,100%{opacity:.55;transform:scale(1)} 50%{opacity:1;transform:scale(1.06)} }
+  @keyframes csblink { 0%,100%{opacity:1} 50%{opacity:.25} }
+</style>
+</helmet>
+
+<div data-screen-label="Menu" style="position:relative;width:100vw;height:100vh;overflow:hidden;background:#06090d;font-family:'Oswald',sans-serif;">
+
+  <!-- base background -->
+  <div style="position:absolute;inset:0;background:radial-gradient(120% 95% at 50% 22%, #0d1c24 0%, #07101580 46%, #05080c 78%);"></div>
+  <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(80,205,240,0.045) 1px,transparent 1px),linear-gradient(90deg,rgba(80,205,240,0.045) 1px,transparent 1px);background-size:48px 48px;opacity:0.55;"></div>
+
+  <!-- GLB canvas -->
+  <canvas ref="{{ canvasRef }}" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></canvas>
+
+  <!-- dimming veil over canvas -->
+  <div ref="{{ veilRef }}" style="position:absolute;inset:0;background:radial-gradient(120% 95% at 50% 45%, rgba(4,9,12,0.42) 0%, rgba(3,6,10,0.86) 100%);opacity:0.6;pointer-events:none;"></div>
+
+  <!-- ===================== MENU ===================== -->
+  <div ref="{{ menuRef }}" style="position:absolute;inset:0;display:flex;flex-direction:column;padding:clamp(30px,3.4vh,52px) clamp(36px,3.4vw,68px) clamp(20px,2.4vh,34px);gap:clamp(16px,2.2vh,30px);">
+
+    <!-- header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:clamp(12px,1.6vh,20px);border-bottom:1px solid rgba(120,230,255,0.24);">
+      <div style="display:flex;align-items:center;gap:clamp(16px,1.5vw,30px);">
+        <div style="position:relative;width:clamp(76px,6.6vw,130px);height:clamp(76px,6.6vw,130px);flex:none;animation:csfloat 5.5s ease-in-out infinite;">
+          <div style="position:absolute;inset:-15%;border-radius:50%;background:radial-gradient(circle, rgba(255,150,40,0.6) 0%, rgba(255,90,20,0.24) 45%, transparent 70%);filter:blur(7px);animation:csglow 3.4s ease-in-out infinite;"></div>
+          <div style="position:absolute;inset:-5%;border-radius:50%;background:conic-gradient(from 0deg, #ffd36b, #ff7a1a, #ffb347, #ff5a14, #ffd36b);-webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));mask:radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 3px));animation:csspin 9s linear infinite;opacity:0.92;"></div>
+          <img src="assets/crazyspot-logo.png" alt="Crazy Spot" style="position:relative;width:100%;height:100%;border-radius:50%;object-fit:cover;filter:drop-shadow(0 4px 16px rgba(255,90,20,0.5));" />
+        </div>
+        <div>
+          <div style="font-family:'Space Mono',monospace;font-size:clamp(11px,0.92vw,18px);letter-spacing:0.46em;text-transform:uppercase;color:#57d8f5;">Cannabis Social Club</div>
+          <div style="font-family:'Space Mono',monospace;font-size:clamp(9px,0.74vw,14px);letter-spacing:0.4em;text-transform:uppercase;color:#7b969d;margin-top:8px;">Carta · Menú</div>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div ref="{{ timeRef }}" style="display:flex;align-items:baseline;justify-content:flex-end;gap:4px;font-weight:600;font-variant-numeric:tabular-nums;font-size:clamp(34px,3.4vw,74px);line-height:0.9;letter-spacing:0.01em;color:#eaf8fc;text-shadow:0 0 22px rgba(63,233,255,0.42);">--:--</div>
+        <div ref="{{ dateRef }}" style="font-family:'Space Mono',monospace;font-size:clamp(10px,0.82vw,16px);letter-spacing:0.3em;text-transform:uppercase;color:#57d8f5;margin-top:9px;">—</div>
+      </div>
+    </div>
+
+    <!-- columns -->
+    <div style="flex:1;min-height:0;display:flex;align-items:stretch;gap:clamp(14px,1.2vw,24px);">
+
+      <!-- COL 1 — WEED -->
+      <div style="flex:1;display:flex;flex-direction:column;gap:clamp(8px,1.05vh,15px);background:rgba(8,16,23,0.66);border:1px solid rgba(120,230,255,0.13);border-radius:16px;padding:clamp(15px,1.4vw,26px) clamp(16px,1.4vw,26px);box-shadow:inset 0 0 50px rgba(40,120,150,0.06),0 8px 30px -16px rgba(0,0,0,0.6);">
+        <div style="margin-bottom:4px;"><div style="font-weight:700;font-size:clamp(17px,1.4vw,30px);text-transform:uppercase;letter-spacing:0.2em;color:#5fe3ff;text-shadow:0 0 16px rgba(63,233,255,0.4);">Weed</div><div style="height:2px;width:clamp(40px,3vw,60px);margin-top:7px;background:linear-gradient(90deg,#45ecff,rgba(69,236,255,0));border-radius:2px;box-shadow:0 0 8px rgba(69,236,255,0.6);"></div></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Purple Roses</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">12,50&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Red Haze</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">13,50&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Soda Pop</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">15&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Cosmopolis</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">15&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Azulcar #4</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">18&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Event Horizon</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">18&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Crypto Chronic</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">18&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Pink Guava</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">18&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Sushi</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">18&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Gas Guzzler</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">18&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Mind Melts</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">18&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Zangria</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">19&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Garlic Breath</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">19&nbsp;€</span></div>
+      </div>
+
+      <!-- COL 2 — HASH -->
+      <div style="flex:1;display:flex;flex-direction:column;gap:clamp(7px,0.95vh,14px);background:rgba(8,16,23,0.66);border:1px solid rgba(120,230,255,0.13);border-radius:16px;padding:clamp(15px,1.4vw,26px) clamp(16px,1.4vw,26px);box-shadow:inset 0 0 50px rgba(40,120,150,0.06),0 8px 30px -16px rgba(0,0,0,0.6);">
+        <div style="margin-bottom:4px;"><div style="font-weight:700;font-size:clamp(17px,1.4vw,30px);text-transform:uppercase;letter-spacing:0.2em;color:#5fe3ff;text-shadow:0 0 16px rgba(63,233,255,0.4);">Hash</div><div style="height:2px;width:clamp(40px,3vw,60px);margin-top:7px;background:linear-gradient(90deg,#45ecff,rgba(69,236,255,0));border-radius:2px;box-shadow:0 0 8px rgba(69,236,255,0.6);"></div></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Orange Dry Nectar</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">13,50&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Gmo Static</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">18&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">FF Static</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">28&nbsp;€</span></div>
+        <div style="font-family:'Space Mono',monospace;font-size:clamp(10px,0.76vw,14px);letter-spacing:0.26em;text-transform:uppercase;color:#5fa9bd;margin-top:6px;">Most Wanted</div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">La Kush Cake · Cali Dry</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">30&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Permanent Marker</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">40&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Gelato 33</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">50&nbsp;€</span></div>
+        <div style="font-family:'Space Mono',monospace;font-size:clamp(10px,0.76vw,14px);letter-spacing:0.26em;text-transform:uppercase;color:#5fa9bd;margin-top:6px;">Staticroom</div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Frozen Sift · Lemon Cherry</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">40&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Glitter Bomb</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">60&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Megan Fox</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">60&nbsp;€</span></div>
+        <div style="font-family:'Space Mono',monospace;font-size:clamp(10px,0.76vw,14px);letter-spacing:0.26em;text-transform:uppercase;color:#5fa9bd;margin-top:6px;">Sahas Terps</div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Tropical Juice</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">60&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Banana Runtz</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">60&nbsp;€</span></div>
+        <div style="font-family:'Space Mono',monospace;font-size:clamp(10px,0.76vw,14px);letter-spacing:0.26em;text-transform:uppercase;color:#5fa9bd;margin-top:6px;">One Stop CA</div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Gusher Mintz</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">40&nbsp;€</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Amaretto Mintz</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">40&nbsp;€</span></div>
+      </div>
+
+      <!-- COL 3 — ROSIN / WPFF -->
+      <div style="flex:1.18;display:flex;flex-direction:column;gap:clamp(8px,1vh,15px);background:rgba(8,16,23,0.66);border:1px solid rgba(120,230,255,0.13);border-radius:16px;padding:clamp(15px,1.4vw,26px) clamp(16px,1.4vw,26px);box-shadow:inset 0 0 50px rgba(40,120,150,0.06),0 8px 30px -16px rgba(0,0,0,0.6);">
+        <div style="margin-bottom:2px;"><div style="font-weight:700;font-size:clamp(17px,1.4vw,30px);text-transform:uppercase;letter-spacing:0.2em;color:#5fe3ff;text-shadow:0 0 16px rgba(63,233,255,0.4);">Rosin</div><div style="height:2px;width:clamp(40px,3vw,60px);margin-top:7px;background:linear-gradient(90deg,#45ecff,rgba(69,236,255,0));border-radius:2px;box-shadow:0 0 8px rgba(69,236,255,0.6);"></div></div>
+        <div style="display:flex;flex-direction:column;gap:clamp(5px,0.7vh,10px);">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:2px;"><span style="flex:none;width:clamp(28px,2vw,38px);height:clamp(28px,2vw,38px);border-radius:50%;border:1.5px solid rgba(120,230,255,0.5);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:clamp(10px,0.78vw,14px);color:#9af3ff;background:rgba(56,231,255,0.08);box-shadow:0 0 12px rgba(56,231,255,0.25);">HB</span><span style="font-weight:700;font-size:clamp(12px,0.92vw,17px);letter-spacing:0.05em;text-transform:uppercase;color:#e6f3f8;">Hash Barbarian</span><span style="font-family:'Space Mono',monospace;font-size:clamp(8px,0.6vw,11px);letter-spacing:0.12em;text-transform:uppercase;color:#5d8088;">· Solventless Live Rosin</span></div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;"><span style="font-weight:500;font-size:clamp(14px,1.02vw,21px);color:#dbe9ef;">Keylime Razz</span><span style="font-weight:600;font-size:clamp(13px,0.95vw,19px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">73u–139u</span></div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;"><span style="font-weight:500;font-size:clamp(14px,1.02vw,21px);color:#dbe9ef;">Purple Papaya</span><span style="font-weight:600;font-size:clamp(13px,0.95vw,19px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">90u–99u</span></div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;"><span style="font-weight:500;font-size:clamp(14px,1.02vw,21px);color:#dbe9ef;">White Thorn Rose</span><span style="font-weight:600;font-size:clamp(13px,0.95vw,19px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">104u–119u</span></div>
+          <div style="text-align:right;font-family:'Space Mono',monospace;font-size:clamp(10px,0.76vw,14px);letter-spacing:0.03em;color:#7fb0bd;margin-top:3px;">2g · 220€ &nbsp;·&nbsp; TerpBox 8g · 850€</div>
+        </div>
+        <div style="margin-top:clamp(8px,1vh,16px);margin-bottom:2px;"><div style="font-weight:700;font-size:clamp(17px,1.4vw,30px);text-transform:uppercase;letter-spacing:0.2em;color:#5fe3ff;text-shadow:0 0 16px rgba(63,233,255,0.4);">WPFF</div><div style="height:2px;width:clamp(40px,3vw,60px);margin-top:7px;background:linear-gradient(90deg,#45ecff,rgba(69,236,255,0));border-radius:2px;box-shadow:0 0 8px rgba(69,236,255,0.6);"></div></div>
+        <div style="display:flex;flex-direction:column;gap:clamp(4px,0.6vh,9px);">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:2px;"><span style="flex:none;width:clamp(28px,2vw,38px);height:clamp(28px,2vw,38px);border-radius:50%;border:1.5px solid rgba(120,230,255,0.5);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:clamp(12px,0.92vw,16px);color:#9af3ff;background:rgba(56,231,255,0.08);box-shadow:0 0 12px rgba(56,231,255,0.25);">1</span><span style="font-weight:700;font-size:clamp(12px,0.92vw,17px);letter-spacing:0.05em;text-transform:uppercase;color:#e6f3f8;">1st Wash</span><span style="font-family:'Space Mono',monospace;font-size:clamp(8px,0.6vw,11px);letter-spacing:0.12em;text-transform:uppercase;color:#5d8088;">· German WPFF</span></div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;"><span style="font-weight:500;font-size:clamp(14px,1.02vw,21px);color:#dbe9ef;">Garlic Breath</span><span style="font-weight:600;font-size:clamp(13px,0.95vw,19px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">90u</span></div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;"><span style="font-weight:500;font-size:clamp(14px,1.02vw,21px);color:#dbe9ef;">Garlic Breath</span><span style="font-weight:600;font-size:clamp(13px,0.95vw,19px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">71u–139u · Fullspec</span></div>
+          <div style="text-align:right;font-family:'Space Mono',monospace;font-size:clamp(10px,0.76vw,14px);letter-spacing:0.03em;color:#7fb0bd;margin-top:3px;">1g · 80€</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:clamp(4px,0.6vh,9px);">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:2px;"><span style="flex:none;width:clamp(28px,2vw,38px);height:clamp(28px,2vw,38px);border-radius:50%;border:1.5px solid rgba(120,230,255,0.5);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:clamp(12px,0.92vw,16px);color:#9af3ff;background:rgba(56,231,255,0.08);box-shadow:0 0 12px rgba(56,231,255,0.25);">C</span><span style="font-weight:700;font-size:clamp(12px,0.92vw,17px);letter-spacing:0.05em;text-transform:uppercase;color:#e6f3f8;">Chosen</span><span style="font-family:'Space Mono',monospace;font-size:clamp(8px,0.6vw,11px);letter-spacing:0.12em;text-transform:uppercase;color:#5d8088;">· Single Source WPFF</span></div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;"><span style="font-weight:500;font-size:clamp(14px,1.02vw,21px);color:#dbe9ef;">Maroccan Peaches</span><span style="font-weight:600;font-size:clamp(13px,0.95vw,19px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">73u–140u</span></div>
+          <div style="text-align:right;font-family:'Space Mono',monospace;font-size:clamp(10px,0.76vw,14px);letter-spacing:0.03em;color:#7fb0bd;margin-top:3px;">1g · 100€</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:clamp(4px,0.6vh,9px);">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:2px;"><span style="flex:none;width:clamp(28px,2vw,38px);height:clamp(28px,2vw,38px);border-radius:50%;border:1.5px solid rgba(120,230,255,0.5);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:clamp(10px,0.78vw,14px);color:#9af3ff;background:rgba(56,231,255,0.08);box-shadow:0 0 12px rgba(56,231,255,0.25);">CB</span><span style="font-weight:700;font-size:clamp(12px,0.92vw,17px);letter-spacing:0.05em;text-transform:uppercase;color:#e6f3f8;">Cool Bred BCN</span><span style="font-family:'Space Mono',monospace;font-size:clamp(8px,0.6vw,11px);letter-spacing:0.12em;text-transform:uppercase;color:#5d8088;">· Fullmelt WPFF</span></div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;"><span style="font-weight:500;font-size:clamp(14px,1.02vw,21px);color:#dbe9ef;">Super Boof Cherry</span><span style="font-weight:600;font-size:clamp(13px,0.95vw,19px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">90u</span></div>
+          <div style="text-align:right;font-family:'Space Mono',monospace;font-size:clamp(10px,0.76vw,14px);letter-spacing:0.03em;color:#7fb0bd;margin-top:3px;">Washmachine 2g · 215€</div>
+        </div>
+      </div>
+
+      <!-- COL 4 — EDIBLES / DRINKS -->
+      <div style="flex:0.82;display:flex;flex-direction:column;gap:clamp(14px,1.6vh,24px);">
+        <div style="flex:1;display:flex;flex-direction:column;gap:clamp(10px,1.3vh,20px);background:rgba(8,16,23,0.66);border:1px solid rgba(120,230,255,0.13);border-radius:16px;padding:clamp(15px,1.4vw,26px) clamp(16px,1.4vw,26px);box-shadow:inset 0 0 50px rgba(40,120,150,0.06),0 8px 30px -16px rgba(0,0,0,0.6);">
+          <div style="margin-bottom:2px;"><div style="font-weight:700;font-size:clamp(17px,1.4vw,30px);text-transform:uppercase;letter-spacing:0.2em;color:#5fe3ff;text-shadow:0 0 16px rgba(63,233,255,0.4);">Edibles</div><div style="height:2px;width:clamp(40px,3vw,60px);margin-top:7px;background:linear-gradient(90deg,#45ecff,rgba(69,236,255,0));border-radius:2px;box-shadow:0 0 8px rgba(69,236,255,0.6);"></div></div>
+          <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Gummies</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">25&nbsp;€</span></div>
+          <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Dirty Sprite</span><span style="flex:1;border-bottom:1.5px dotted rgba(120,225,255,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#45ecff;font-variant-numeric:tabular-nums;white-space:nowrap;">30&nbsp;€</span></div>
+        </div>
+        <div style="flex:1.25;display:flex;flex-direction:column;gap:clamp(10px,1.3vh,20px);background:rgba(8,16,23,0.66);border:1px solid rgba(120,230,255,0.13);border-radius:16px;padding:clamp(15px,1.4vw,26px) clamp(16px,1.4vw,26px);box-shadow:inset 0 0 50px rgba(40,120,150,0.06),0 8px 30px -16px rgba(0,0,0,0.6);">
+          <div style="margin-bottom:2px;"><div style="font-weight:700;font-size:clamp(17px,1.4vw,30px);text-transform:uppercase;letter-spacing:0.2em;color:#74ffcf;text-shadow:0 0 16px rgba(116,255,207,0.4);">Drinks</div><div style="height:2px;width:clamp(40px,3vw,60px);margin-top:7px;background:linear-gradient(90deg,#74ffcf,rgba(116,255,207,0));border-radius:2px;box-shadow:0 0 8px rgba(116,255,207,0.6);"></div></div>
+          <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Agua</span><span style="flex:1;border-bottom:1.5px dotted rgba(116,255,207,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#74ffcf;font-variant-numeric:tabular-nums;white-space:nowrap;">1,50&nbsp;€</span></div>
+          <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Cola</span><span style="flex:1;border-bottom:1.5px dotted rgba(116,255,207,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#74ffcf;font-variant-numeric:tabular-nums;white-space:nowrap;">2,50&nbsp;€</span></div>
+          <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Ice Tea</span><span style="flex:1;border-bottom:1.5px dotted rgba(116,255,207,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#74ffcf;font-variant-numeric:tabular-nums;white-space:nowrap;">2,50&nbsp;€</span></div>
+          <div style="display:flex;align-items:baseline;gap:8px;"><span style="font-weight:500;font-size:clamp(14px,1.05vw,22px);color:#dbe9ef;white-space:nowrap;">Redbull</span><span style="flex:1;border-bottom:1.5px dotted rgba(116,255,207,0.22);transform:translateY(-5px);"></span><span style="font-weight:600;font-size:clamp(14px,1.05vw,22px);color:#74ffcf;font-variant-numeric:tabular-nums;white-space:nowrap;">3,00&nbsp;€</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- footer -->
+    <div style="display:flex;justify-content:center;align-items:center;gap:22px;padding-top:clamp(10px,1.4vh,18px);border-top:1px solid rgba(120,230,255,0.14);font-family:'Space Mono',monospace;font-size:clamp(9px,0.74vw,14px);letter-spacing:0.3em;text-transform:uppercase;color:#6f8b92;">
+      <span>Solo socios · +18</span><span style="color:#3fe9ff;">●</span><span>Consumo responsable</span><span style="color:#3fe9ff;">●</span><span>Precios orientativos en €</span>
+    </div>
+  </div>
+
+  <!-- ===================== LOGO TRANSITION OVERLAY ===================== -->
+  <div ref="{{ brandRef }}" style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:clamp(14px,2vh,30px);pointer-events:none;opacity:0;">
+    <div style="position:absolute;width:80vh;height:80vh;border-radius:50%;background:radial-gradient(circle, rgba(255,150,40,0.20) 0%, rgba(56,231,255,0.10) 42%, transparent 68%);filter:blur(10px);animation:csglow 4s ease-in-out infinite;"></div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1920,&quot;height&quot;:1080},&quot;menuSeconds&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:45,&quot;min&quot;:10,&quot;max&quot;:180,&quot;tsType&quot;:&quot;number&quot;},&quot;logoSeconds&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:10,&quot;min&quot;:3,&quot;max&quot;:40,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.canvasRef = React.createRef();
+    this.menuRef = React.createRef();
+    this.veilRef = React.createRef();
+    this.brandRef = React.createRef();
+    this.timeRef = React.createRef();
+    this.dateRef = React.createRef();
+    this.focus = 0;
+    this.target = 0;
+  }
+
+  componentDidMount() {
+    this._mounted = true;
+    this._waitThree();
+    this._updateClock();
+    this._clock = setInterval(() => this._updateClock(), 1000);
+  }
+
+  componentWillUnmount() {
+    this._mounted = false;
+    clearTimeout(this._cycle);
+    clearInterval(this._clock);
+    cancelAnimationFrame(this._raf);
+    if (this._resize) window.removeEventListener("resize", this._resize);
+  }
+
+  _updateClock() {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, "0");
+    const mm = String(now.getMinutes()).padStart(2, "0");
+    const blink = now.getSeconds() % 2 === 0 ? "1" : "0.25";
+    if (this.timeRef.current) {
+      this.timeRef.current.innerHTML =
+        '<span>' + hh + '</span>' +
+        '<span style="opacity:' + blink + ';transition:opacity .3s;">:</span>' +
+        '<span>' + mm + '</span>';
+    }
+    if (this.dateRef.current) {
+      let d = now.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+      d = d.charAt(0).toUpperCase() + d.slice(1);
+      this.dateRef.current.textContent = d;
+    }
+  }
+
+  _waitThree() {
+    if (!this._mounted) return;
+    if (window.THREE && THREE.GLTFLoader) this._initThree();
+    else setTimeout(() => this._waitThree(), 120);
+  }
+
+  _initThree() {
+    if (this._inited) return;
+    const canvas = this.canvasRef.current;
+    if (!canvas) return;
+    this._inited = true;
+
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    } catch (e) {
+      this._inited = false;
+      setTimeout(() => this._waitThree(), 200);
+      return;
+    }
+    renderer.setClearColor(0x000000, 0);
+    if ("outputEncoding" in renderer) renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+    camera.position.set(0, 0.3, 4.4);
+    camera.lookAt(0, 0, 0);
+
+    scene.add(new THREE.HemisphereLight(0xbfefff, 0x06121a, 0.55));
+    const key = new THREE.DirectionalLight(0xffffff, 1.05); key.position.set(2.6, 4, 3.2); scene.add(key);
+    const rim = new THREE.DirectionalLight(0x35e9ff, 1.5); rim.position.set(-3.6, 1.4, -2.6); scene.add(rim);
+    const rim2 = new THREE.DirectionalLight(0x6effc8, 0.8); rim2.position.set(3.2, -1.2, -2); scene.add(rim2);
+
+    const group = new THREE.Group();
+    scene.add(group);
+    this.group = group;
+
+    new THREE.GLTFLoader().load("uploads/crazyspot2.glb", (gltf) => {
+      const model = gltf.scene;
+      model.traverse((o) => {
+        if (o.isMesh && o.material) {
+          const m = o.material;
+          if ("metalness" in m) m.metalness = Math.min(0.45, (m.metalness == null ? 0.25 : m.metalness));
+          if ("roughness" in m) m.roughness = Math.max(0.32, (m.roughness == null ? 0.5 : m.roughness));
+          m.needsUpdate = true;
+        }
+      });
+      const box = new THREE.Box3().setFromObject(model);
+      model.position.sub(box.getCenter(new THREE.Vector3()));
+      const size = box.getSize(new THREE.Vector3());
+      const maxd = Math.max(size.x, size.y, size.z) || 1;
+      model.scale.setScalar(2.5 / maxd);
+      group.add(model);
+    });
+
+    const resize = () => {
+      const w = canvas.clientWidth || window.innerWidth;
+      const h = canvas.clientHeight || window.innerHeight;
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    };
+    window.addEventListener("resize", resize);
+    this._resize = resize;
+    resize();
+
+    const loop = () => {
+      this._raf = requestAnimationFrame(loop);
+      this.focus += (this.target - this.focus) * 0.06;
+      const f = this.focus;
+      group.rotation.y += 0.0045;
+      group.scale.setScalar(0.6 + 0.62 * f);
+      group.position.y = -0.12 * (1 - f);
+      if (this.menuRef.current) this.menuRef.current.style.opacity = (1 - f).toFixed(3);
+      if (this.veilRef.current) this.veilRef.current.style.opacity = (0.8 - 0.8 * f).toFixed(3);
+      if (this.brandRef.current) this.brandRef.current.style.opacity = Math.max(0, (f - 0.12) / 0.88).toFixed(3);
+      renderer.render(scene, camera);
+    };
+    loop();
+    this._startCycle();
+  }
+
+  _startCycle() {
+    const menuMs = (this.props.menuSeconds == null ? 45 : this.props.menuSeconds) * 1000;
+    const logoMs = (this.props.logoSeconds == null ? 10 : this.props.logoSeconds) * 1000;
+    const toLogo = () => { this.target = 1; this._cycle = setTimeout(toMenu, logoMs); };
+    const toMenu = () => { this.target = 0; this._cycle = setTimeout(toLogo, menuMs); };
+    this._cycle = setTimeout(toLogo, menuMs);
+  }
+
+  renderVals() {
+    return {
+      canvasRef: this.canvasRef,
+      menuRef: this.menuRef,
+      veilRef: this.veilRef,
+      brandRef: this.brandRef,
+      timeRef: this.timeRef,
+      dateRef: this.dateRef
+    };
+  }
+}
+</script>
+</body>
+</html>
